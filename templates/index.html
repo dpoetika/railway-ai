@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lung Disease Classifier</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🫁 Lung Disease Classifier</h1>
+            <p>Upload a chest X‑ray to classify as <strong>Lung Opacity</strong>, <strong>Normal</strong>, or <strong>Viral Pneumonia</strong></p>
+        </header>
+
+        <div class="upload-area">
+            <input type="file" id="imageUpload" accept="image/*">
+            <button id="predictBtn" disabled>Classify</button>
+            <div id="preview"></div>
+        </div>
+
+        <div id="result" class="result-card hidden">
+            <h2>Prediction Result</h2>
+            <div class="prediction-details">
+                <p><strong>Class:</strong> <span id="predClass"></span></p>
+                <p><strong>Confidence:</strong> <span id="confidence"></span>%</p>
+            </div>
+            <div class="score-bars">
+                <!-- dynamic bars -->
+            </div>
+        </div>
+
+        <div class="graphs">
+            <h2>Model Performance</h2>
+            <div class="graph-grid">
+                <div class="graph-card">
+                    <h3>Training & Validation Loss/Accuracy</h3>
+                    <img src="{{ url_for('static', filename='accuracy_loss.png') }}" alt="Accuracy and Loss Curves">
+                </div>
+                <div class="graph-card">
+                    <h3>Confusion Matrix</h3>
+                    <img src="{{ url_for('static', filename='confusion_matrix.png') }}" alt="Confusion Matrix">
+                </div>
+                <div class="graph-card">
+                    <h3>ROC Curves</h3>
+                    <img src="{{ url_for('static', filename='roc_curve.png') }}" alt="ROC Curves">
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>⚠️ Disclaimer: This tool is for educational purposes only. Always consult a medical professional.</p>
+        </footer>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('imageUpload');
+        const predictBtn = document.getElementById('predictBtn');
+        const previewDiv = document.getElementById('preview');
+        const resultDiv = document.getElementById('result');
+        const predClassSpan = document.getElementById('predClass');
+        const confidenceSpan = document.getElementById('confidence');
+        const scoreBarsDiv = document.querySelector('.score-bars');
+
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewDiv.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-width:300px; border-radius:8px;">`;
+                    predictBtn.disabled = false;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewDiv.innerHTML = '';
+                predictBtn.disabled = true;
+            }
+        });
+
+        predictBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            predictBtn.disabled = true;
+            predictBtn.textContent = 'Classifying...';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                predClassSpan.textContent = data.class;
+                confidenceSpan.textContent = (data.confidence * 100).toFixed(2);
+                
+                // Build score bars
+                scoreBarsDiv.innerHTML = '';
+                for (const [cls, score] of Object.entries(data.all_scores)) {
+                    const percent = (score * 100).toFixed(2);
+                    const bar = document.createElement('div');
+                    bar.className = 'score-bar';
+                    bar.innerHTML = `
+                        <span>${cls}</span>
+                        <div class="bar-bg"><div class="bar-fill" style="width: ${percent}%;"></div></div>
+                        <span>${percent}%</span>
+                    `;
+                    scoreBarsDiv.appendChild(bar);
+                }
+                resultDiv.classList.remove('hidden');
+            } catch (err) {
+                alert('Network error: ' + err.message);
+            } finally {
+                predictBtn.disabled = false;
+                predictBtn.textContent = 'Classify';
+            }
+        });
+    </script>
+</body>
+</html>
