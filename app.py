@@ -4,15 +4,12 @@ import tensorflow as tf
 import cv2
 from flask import Flask, request, render_template, jsonify
 from werkzeug.utils import secure_filename
-from tensorflow.keras.models import model_from_json
 
 app = Flask(__name__)
 
 # Configuration
 IMG_SIZE = 128
-# Paths to the model files (adjust if they are in a different location)
-ARCHITECTURE_FILE = "model_architecture.json"
-WEIGHTS_FILE = "model_weights.weights.h5"
+MODEL_PATH = "model_weights.weights.h5"          # <-- single H5 file
 CLASS_NAMES = ['Lung_Opacity', 'Normal', 'Viral Pneumonia']   # must match training order
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 UPLOAD_FOLDER = 'uploads'
@@ -20,10 +17,8 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
 
-# Load model architecture and weights
-with open(ARCHITECTURE_FILE, 'r') as f:
-    model = model_from_json(f.read())
-model.load_weights(WEIGHTS_FILE)
+# Load model
+model = tf.keras.models.load_model(MODEL_PATH)
 print("Model loaded successfully.")
 
 def allowed_file(filename):
