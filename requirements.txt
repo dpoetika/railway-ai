@@ -1,0 +1,7 @@
+flask
+tensorflow
+keras
+numpy
+opencv-python-headless
+Pillow
+Werkzeug
