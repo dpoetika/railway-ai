@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 # Configuration
 IMG_SIZE = 128
-MODEL_PATH = "model_weights.weights.h5"          # <-- single H5 file
+MODEL_PATH = "lung_disease_full.h5"          # <-- single H5 file
 CLASS_NAMES = ['Lung_Opacity', 'Normal', 'Viral Pneumonia']   # must match training order
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 UPLOAD_FOLDER = 'uploads'
